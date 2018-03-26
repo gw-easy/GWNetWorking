@@ -184,7 +184,7 @@ static GWNetWorking *baseNet = nil;
     
     NSMutableURLRequest *request = [GWNetWorking_Share.sessionManager.requestSerializer requestWithMethod:[self getStringForRequestType:method] URLString:[[NSURL URLWithString:URLString relativeToURL:GWNetWorking_Share.sessionManager.baseURL] absoluteString] parameters:param error:nil];
     
-   __block NSURLSessionDownloadTask *dataTask = [GWNetWorking_Share.sessionManager downloadTaskWithRequest:request progress:^(NSProgress * _Nonnull downloadProgress) {
+    NSURLSessionDownloadTask *dataTask = [GWNetWorking_Share.sessionManager downloadTaskWithRequest:request progress:^(NSProgress * _Nonnull downloadProgress) {
         
         /**
          *  下载进度
