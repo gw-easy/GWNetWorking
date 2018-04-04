@@ -293,6 +293,9 @@ static GWNetWorking *baseNet = nil;
 }
 
 - (void)removeTaskFromArr:(NSURLResponse *)response{
+    if (!response) {
+        return;
+    }
     if (GWNetWorking_Share.taskArray.count) {
         for (NSURLSessionTask *task in GWNetWorking_Share.taskArray) {
             if ([task.response.URL isEqual:response.URL]) {
