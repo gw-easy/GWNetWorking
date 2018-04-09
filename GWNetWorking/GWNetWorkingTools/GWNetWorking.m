@@ -17,7 +17,7 @@
 
 #define GWNetWorking_Share [GWNetWorking shareGWNetWorking]
 
-@interface GWNetWorking()<NSCopying,NSMutableCopying>
+@interface GWNetWorking()
 @property (strong, nonatomic) AFHTTPSessionManager *sessionManager;
 
 @property (readwrite,strong, nonatomic) NSMutableArray *taskArray;
@@ -41,13 +41,14 @@ static GWNetWorking *baseNet = nil;
     return [GWNetWorking shareGWNetWorking];
 }
 
-- (id)copyWithZone:(NSZone *)zone{
+- (id)copy{
     return [GWNetWorking shareGWNetWorking];
 }
 
-- (id)mutableCopyWithZone:(NSZone *)zone{
+- (id)mutableCopy{
     return [GWNetWorking shareGWNetWorking];
 }
+
 
 - (instancetype)init{
     if (self = [super init]) {
