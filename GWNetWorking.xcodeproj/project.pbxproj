@@ -22,6 +22,10 @@
 		C41497152068988500F0CB58 /* AFURLResponseSerialization.m in Sources */ = {isa = PBXBuildFile; fileRef = C414970C2068988500F0CB58 /* AFURLResponseSerialization.m */; };
 		C41497162068988500F0CB58 /* AFURLSessionManager.m in Sources */ = {isa = PBXBuildFile; fileRef = C414970E2068988500F0CB58 /* AFURLSessionManager.m */; };
 		C41497172068988500F0CB58 /* GWNetWorking.m in Sources */ = {isa = PBXBuildFile; fileRef = C41497102068988500F0CB58 /* GWNetWorking.m */; };
+		C4FBDA0D20AAB3530037551B /* amrFileCodec.mm in Sources */ = {isa = PBXBuildFile; fileRef = C4FBDA0120AAB3530037551B /* amrFileCodec.mm */; };
+		C4FBDA0E20AAB3530037551B /* libopencore-amrnb.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C4FBDA0320AAB3530037551B /* libopencore-amrnb.a */; };
+		C4FBDA0F20AAB3530037551B /* libopencore-amrwb.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C4FBDA0420AAB3530037551B /* libopencore-amrwb.a */; };
+		C4FBDA1020AAB3530037551B /* VoiceConverter.mm in Sources */ = {isa = PBXBuildFile; fileRef = C4FBDA0C20AAB3530037551B /* VoiceConverter.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -73,6 +77,16 @@
 		C414970E2068988500F0CB58 /* AFURLSessionManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFURLSessionManager.m; sourceTree = "<group>"; };
 		C414970F2068988500F0CB58 /* GWNetWorking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GWNetWorking.h; sourceTree = "<group>"; };
 		C41497102068988500F0CB58 /* GWNetWorking.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GWNetWorking.m; sourceTree = "<group>"; };
+		C4FBDA0020AAB3530037551B /* amrFileCodec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = amrFileCodec.h; sourceTree = "<group>"; };
+		C4FBDA0120AAB3530037551B /* amrFileCodec.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = amrFileCodec.mm; sourceTree = "<group>"; };
+		C4FBDA0320AAB3530037551B /* libopencore-amrnb.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libopencore-amrnb.a"; sourceTree = "<group>"; };
+		C4FBDA0420AAB3530037551B /* libopencore-amrwb.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = "libopencore-amrwb.a"; sourceTree = "<group>"; };
+		C4FBDA0620AAB3530037551B /* interf_dec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = interf_dec.h; sourceTree = "<group>"; };
+		C4FBDA0720AAB3530037551B /* interf_enc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = interf_enc.h; sourceTree = "<group>"; };
+		C4FBDA0920AAB3530037551B /* dec_if.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dec_if.h; sourceTree = "<group>"; };
+		C4FBDA0A20AAB3530037551B /* if_rom.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = if_rom.h; sourceTree = "<group>"; };
+		C4FBDA0B20AAB3530037551B /* VoiceConverter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VoiceConverter.h; sourceTree = "<group>"; };
+		C4FBDA0C20AAB3530037551B /* VoiceConverter.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = VoiceConverter.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,6 +94,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C4FBDA0F20AAB3530037551B /* libopencore-amrwb.a in Frameworks */,
+				C4FBDA0E20AAB3530037551B /* libopencore-amrnb.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -158,6 +174,7 @@
 		C41497002068988500F0CB58 /* GWNetWorkingTools */ = {
 			isa = PBXGroup;
 			children = (
+				C4FBD9FE20AAB3530037551B /* VoiceConvert */,
 				C41497012068988500F0CB58 /* AFNetworking */,
 				C414970F2068988500F0CB58 /* GWNetWorking.h */,
 				C41497102068988500F0CB58 /* GWNetWorking.m */,
@@ -183,6 +200,55 @@
 				C414970E2068988500F0CB58 /* AFURLSessionManager.m */,
 			);
 			path = AFNetworking;
+			sourceTree = "<group>";
+		};
+		C4FBD9FE20AAB3530037551B /* VoiceConvert */ = {
+			isa = PBXGroup;
+			children = (
+				C4FBD9FF20AAB3530037551B /* amrwapper */,
+				C4FBDA0220AAB3530037551B /* lib */,
+				C4FBDA0520AAB3530037551B /* opencore-amrnb */,
+				C4FBDA0820AAB3530037551B /* opencore-amrwb */,
+				C4FBDA0B20AAB3530037551B /* VoiceConverter.h */,
+				C4FBDA0C20AAB3530037551B /* VoiceConverter.mm */,
+			);
+			path = VoiceConvert;
+			sourceTree = "<group>";
+		};
+		C4FBD9FF20AAB3530037551B /* amrwapper */ = {
+			isa = PBXGroup;
+			children = (
+				C4FBDA0020AAB3530037551B /* amrFileCodec.h */,
+				C4FBDA0120AAB3530037551B /* amrFileCodec.mm */,
+			);
+			path = amrwapper;
+			sourceTree = "<group>";
+		};
+		C4FBDA0220AAB3530037551B /* lib */ = {
+			isa = PBXGroup;
+			children = (
+				C4FBDA0320AAB3530037551B /* libopencore-amrnb.a */,
+				C4FBDA0420AAB3530037551B /* libopencore-amrwb.a */,
+			);
+			path = lib;
+			sourceTree = "<group>";
+		};
+		C4FBDA0520AAB3530037551B /* opencore-amrnb */ = {
+			isa = PBXGroup;
+			children = (
+				C4FBDA0620AAB3530037551B /* interf_dec.h */,
+				C4FBDA0720AAB3530037551B /* interf_enc.h */,
+			);
+			path = "opencore-amrnb";
+			sourceTree = "<group>";
+		};
+		C4FBDA0820AAB3530037551B /* opencore-amrwb */ = {
+			isa = PBXGroup;
+			children = (
+				C4FBDA0920AAB3530037551B /* dec_if.h */,
+				C4FBDA0A20AAB3530037551B /* if_rom.h */,
+			);
+			path = "opencore-amrwb";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -321,6 +387,7 @@
 				C41497162068988500F0CB58 /* AFURLSessionManager.m in Sources */,
 				C41496D32068984E00F0CB58 /* ViewController.m in Sources */,
 				C41496DE2068984E00F0CB58 /* main.m in Sources */,
+				C4FBDA1020AAB3530037551B /* VoiceConverter.mm in Sources */,
 				C41497122068988500F0CB58 /* AFNetworkReachabilityManager.m in Sources */,
 				C41496D02068984E00F0CB58 /* AppDelegate.m in Sources */,
 				C41497172068988500F0CB58 /* GWNetWorking.m in Sources */,
@@ -328,6 +395,7 @@
 				C41497142068988500F0CB58 /* AFURLRequestSerialization.m in Sources */,
 				C41497152068988500F0CB58 /* AFURLResponseSerialization.m in Sources */,
 				C41497112068988500F0CB58 /* AFHTTPSessionManager.m in Sources */,
+				C4FBDA0D20AAB3530037551B /* amrFileCodec.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -492,8 +560,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = E8X5ZQ3QPM;
+				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = GWNetWorking/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/GWNetWorking/GWNetWorkingTools/VoiceConvert/lib",
+				);
+				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = gw.GWNetWorking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -506,8 +581,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = E8X5ZQ3QPM;
+				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = GWNetWorking/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/GWNetWorking/GWNetWorkingTools/VoiceConvert/lib",
+				);
+				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = gw.GWNetWorking;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";

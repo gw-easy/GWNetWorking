@@ -101,6 +101,24 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 
 
 /**
+ 上传视频文件
+
+ @param URLString 请求url
+ @param param 参数
+ @param videoPath 视频路径
+ @param method 请求方式
+ @param uploadFileProgress 进度
+ @param success 成功
+ @param failure 失败
+ */
++ (void)requestUploadVideoWithURLString:(NSString *)URLString
+                              WithParam:(NSDictionary *)param
+                          withVideoPath:(NSString *)videoPath
+                             withMethod:(HTTPRequestType_GW)method
+                     uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
+                                success:(void(^)(id result))success
+                                failure:(void(^)(NSError *erro))failure;
+/**
  下载文件
 
  @param URLString 请求url
@@ -122,6 +140,6 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 //取消当前任务
 - (void)cancelCurrentTask;
 //取消除当前任务外，所有的任务
-- (void)cancelBeginAllTask;
+- (void)cancelNoCurrentAllTask;
 
 @end
