@@ -56,7 +56,13 @@ static GWNetWorking *baseNet = nil;
 
         _sessionManager = [AFHTTPSessionManager manager];
         
+//        根据后台接受数据形式，如果是表单形式接收，使用AFHTTPRequestSerializer 如果是json数据接收，使用AFJSONRequestSerializer
+//        表单形式
+        _sessionManager.requestSerializer = [AFHTTPRequestSerializer serializer];
         _sessionManager.responseSerializer = [AFHTTPResponseSerializer serializer];
+//        json形式
+//        _sessionManager.requestSerializer = [AFJSONRequestSerializer serializer];
+//        _sessionManager.responseSerializer = [AFJSONResponseSerializer serializer];
         
         //        响应服务器的文件格式
         _sessionManager.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json", @"text/json",@"text/html", @"text/plain",@"text/javascript",nil];
