@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-
+#import "AFNetworking.h"
 typedef enum : NSUInteger {
     POST_GW = 0,
     GET_GW,
@@ -34,8 +34,8 @@ typedef enum : NSUInteger {
 + (void)request:(NSString*)taskID
       WithParam:(id)param
      withMethod:(HTTPRequestType_GW)method
-        success:(void(^)(id result))success
-        failure:(void(^)(NSError *erro))failure;
+        success:(void(^)(id result,NSURLResponse *response))success
+        failure:(void(^)(NSError *error))failure;
 
 
 /**
@@ -51,12 +51,31 @@ typedef enum : NSUInteger {
 + (void)request:(NSString*)taskID
       WithParam:(id)param
      withMethod:(HTTPRequestType_GW)method
-    uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
-        success:(void(^)(id result))success
-        failure:(void(^)(NSError *erro))failure;
+uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
+        success:(void(^)(id result,NSURLResponse *response))success
+        failure:(void(^)(NSError *error))failure;
 
 
-
+/**
+ 上传
+ 
+ @param taskID 请求url
+ @param param 参数
+ @param Exparam 图片参数
+ @param method 方式
+ @param block 上传block
+ @param uploadFileProgress 进度
+ @param success 成功
+ @param failure 失败
+ */
++ (void)request:(NSString*)taskID
+      WithParam:(NSDictionary*)param
+    withExParam:(NSDictionary*)Exparam
+     withMethod:(HTTPRequestType_GW)method
+constructingBodyWithBlock:(void (^)(id <AFMultipartFormData> formData))block
+uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
+        success:(void (^)(id result,NSURLResponse *response))success
+        failure:(void (^)(NSError* error))failure;
 
 /**
  图片上传
@@ -74,8 +93,8 @@ typedef enum : NSUInteger {
     withExParam:(NSDictionary*)Exparam
      withMethod:(HTTPRequestType_GW)method
 uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
-        success:(void (^)(id result))success
-        failure:(void (^)(NSError* erro))failure;
+        success:(void (^)(id result,NSURLResponse *response))success
+        failure:(void (^)(NSError* error))failure;
 
 
 
@@ -95,8 +114,8 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
                     withExParam:(NSDictionary*)Exparam
                      withMethod:(HTTPRequestType_GW)method
              uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
-                        success:(void(^)(id result))success
-                        failure:(void(^)(NSError *erro))failure;
+                        success:(void(^)(id result,NSURLResponse *response))success
+                        failure:(void(^)(NSError *error))failure;
 
 
 
@@ -116,8 +135,8 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
                           withVideoPath:(NSString *)videoPath
                              withMethod:(HTTPRequestType_GW)method
                      uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
-                                success:(void(^)(id result))success
-                                failure:(void(^)(NSError *erro))failure;
+                                success:(void(^)(id result,NSURLResponse *response))success
+                                failure:(void(^)(NSError *error))failure;
 /**
  下载文件
 

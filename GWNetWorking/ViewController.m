@@ -26,7 +26,7 @@
     
     [GWNetWorking request:MemberLoginURL WithParam:dic withMethod:POST_GW uploadFileProgress:^(NSProgress *uploadProgress) {
         
-    } success:^(id result) {
+    } success:^(id result,NSURLResponse *response) {
         
         NSLog(@"---result=%@",result);
     } failure:^(NSError *erro) {
