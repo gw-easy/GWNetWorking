@@ -61,7 +61,6 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
  
  @param taskID 请求url
  @param param 参数
- @param Exparam 图片参数
  @param method 方式
  @param block 上传block
  @param uploadFileProgress 进度
@@ -70,7 +69,6 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
  */
 + (void)request:(NSString*)taskID
       WithParam:(NSDictionary*)param
-    withExParam:(NSDictionary*)Exparam
      withMethod:(HTTPRequestType_GW)method
 constructingBodyWithBlock:(void (^)(id <AFMultipartFormData> formData))block
 uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress

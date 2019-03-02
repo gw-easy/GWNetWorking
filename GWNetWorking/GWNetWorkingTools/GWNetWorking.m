@@ -138,7 +138,6 @@ static GWNetWorking *baseNet = nil;
 
 + (void)request:(NSString*)taskID
       WithParam:(NSDictionary*)param
-    withExParam:(NSDictionary*)Exparam
      withMethod:(HTTPRequestType_GW)method
 constructingBodyWithBlock:(void (^)(id <AFMultipartFormData> formData))block
 uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
