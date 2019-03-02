@@ -7,17 +7,21 @@
 //
 
 #import "GWNetWorking.h"
-#import "AFNetworking.h"
 #import "VoiceConverter.h"
 //设置超时时间
-#define Time_Out_GWSet 60.0f
+#define Time_Out_GWSet 30.0f
 
 //是否显示手机状态栏loading标记
 #define setNetworkActivityIndicatorVisible(x) [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:x];
 
 #define GWNetWorking_Share [GWNetWorking shareGWNetWorking]
 
-@interface GWNetWorking()
+@interface GWNetWorking(){
+    dispatch_queue_t GW_Async_Queue;
+    dispatch_group_t GW_Async_Group;
+    dispatch_queue_t GW_Sync_Queue;
+    dispatch_group_t GW_Sync_Group;
+}
 @property (strong, nonatomic) AFHTTPSessionManager *sessionManager;
 
 @property (readwrite,strong, nonatomic) NSMutableArray *taskArray;
@@ -52,6 +56,12 @@ static GWNetWorking *baseNet = nil;
 
 - (instancetype)init{
     if (self = [super init]) {
+        // 创建全局并行
+        GW_Async_Queue = dispatch_queue_create("GW_Async_Queue", NULL);
+        GW_Async_Group = dispatch_group_create();
+        GW_Sync_Queue = dispatch_queue_create("GW_Sync_Queue", NULL);
+        GW_Sync_Group = dispatch_group_create();
+        
         _taskArray = [[NSMutableArray alloc] init];
 
         _sessionManager = [AFHTTPSessionManager manager];
@@ -99,11 +109,13 @@ static GWNetWorking *baseNet = nil;
 }
 
 
+
+
 + (void)request:(NSString*)taskID
             WithParam:(id)param
            withMethod:(HTTPRequestType_GW)method
-              success:(void(^)(id result))success
-              failure:(void(^)(NSError *erro))failure{
+              success:(void(^)(id result,NSURLResponse *response))success
+              failure:(void(^)(NSError *error))failure{
     
     [self request:taskID WithParam:param withMethod:method uploadFileProgress:nil success:success failure:failure];
     
@@ -114,8 +126,8 @@ static GWNetWorking *baseNet = nil;
       WithParam:(id)param
      withMethod:(HTTPRequestType_GW)method
     uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
-        success:(void(^)(id result))success
-        failure:(void(^)(NSError *erro))failure{
+        success:(void(^)(id result,NSURLResponse *response))success
+        failure:(void(^)(NSError *error))failure{
     
     setNetworkActivityIndicatorVisible(YES)
     
@@ -125,12 +137,28 @@ static GWNetWorking *baseNet = nil;
 }
 
 + (void)request:(NSString*)taskID
+      WithParam:(NSDictionary*)param
+    withExParam:(NSDictionary*)Exparam
+     withMethod:(HTTPRequestType_GW)method
+constructingBodyWithBlock:(void (^)(id <AFMultipartFormData> formData))block
+uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
+        success:(void (^)(id result,NSURLResponse *response))success
+        failure:(void (^)(NSError* error))failure{
+    
+    setNetworkActivityIndicatorVisible(YES)
+    
+    NSMutableURLRequest *request = [GWNetWorking_Share.sessionManager.requestSerializer multipartFormRequestWithMethod:[GWNetWorking_Share getStringForRequestType:method] URLString:taskID parameters:param constructingBodyWithBlock:block error:nil];
+    
+    [GWNetWorking_Share requestDataTask:request success:success failure:failure uploadFileProgress:uploadFileProgress];
+}
+
++ (void)request:(NSString*)taskID
             WithParam:(NSDictionary*)param
           withExParam:(NSDictionary*)Exparam
            withMethod:(HTTPRequestType_GW)method
     uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
-              success:(void (^)(id result))success
-            failure:(void (^)(NSError* erro))failure{
+              success:(void (^)(id result,NSURLResponse *response))success
+            failure:(void (^)(NSError* error))failure{
     
     setNetworkActivityIndicatorVisible(YES)
     
@@ -153,14 +181,13 @@ static GWNetWorking *baseNet = nil;
     [GWNetWorking_Share requestDataTask:request success:success failure:failure uploadFileProgress:uploadFileProgress];
 }
 
-
 + (void)requestSoundFileRequest:(NSString*)taskID
                       WithParam:(NSDictionary *)param
                     withExParam:(NSDictionary*)Exparam
                      withMethod:(HTTPRequestType_GW)method
              uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
-                        success:(void(^)(id result))success
-                        failure:(void(^)(NSError *erro))failure{
+                        success:(void(^)(id result,NSURLResponse *response))success
+                        failure:(void(^)(NSError *error))failure{
     
     setNetworkActivityIndicatorVisible(YES)
     
@@ -203,8 +230,8 @@ static GWNetWorking *baseNet = nil;
                               withVideoPath:(NSString *)videoPath
                               withMethod:(HTTPRequestType_GW)method
                      uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
-                                success:(void(^)(id result))success
-                                failure:(void(^)(NSError *erro))failure{
+                                success:(void(^)(id result,NSURLResponse *response))success
+                                failure:(void(^)(NSError *error))failure{
     __weak GWNetWorking *netW = GWNetWorking_Share;
 //    进行视频转换，由高->中，如果录制时就是中质量，请将转换方法屏蔽；
     [self compressVideo:videoPath finish:^(NSString *path) {
@@ -263,8 +290,8 @@ static GWNetWorking *baseNet = nil;
 
 #pragma mark - commonAction
 - (void)requestDataTask:(NSMutableURLRequest *)request
-                success:(void(^)(id result))success
-                failure:(void(^)(NSError *erro))failure
+                success:(void(^)(id result,NSURLResponse *response))success
+                failure:(void(^)(NSError *error))failure
      uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress{
     
     NSURLSessionDataTask *dataTask = [GWNetWorking_Share.sessionManager dataTaskWithRequest:request uploadProgress:^(NSProgress * _Nonnull uploadProgress) {
@@ -290,9 +317,9 @@ static GWNetWorking *baseNet = nil;
             if (success != nil){
                 if ([responseObject isKindOfClass:[NSData class]]) {
                     id result = [NSJSONSerialization JSONObjectWithData:responseObject options:NSJSONReadingMutableContainers | NSJSONReadingMutableLeaves error:nil];
-                    success(result);
+                    success(result,response);
                 }else{
-                    success(responseObject);
+                    success(responseObject,response);
                 }
             }
         }
