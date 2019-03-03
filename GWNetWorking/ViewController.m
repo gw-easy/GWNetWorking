@@ -8,8 +8,6 @@
 
 #import "ViewController.h"
 #import "GWNetWorking.h"
-#define HTTP_BaseURL      @"http://ispeakuat.suntrayoa.com/front"
-#define  MemberLoginURL   (HTTP_BaseURL@"/toLogin.do")
 @interface ViewController ()
 
 @end
@@ -18,21 +16,20 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    NSMutableDictionary * dic=[[NSMutableDictionary alloc] init];
-    [dic setObject:@"13000010001" forKey:@"username"];
-    [dic setObject:@"qwe123" forKey:@"password"];
-    [dic setObject:@"service" forKey:@"service"];
-    [dic setObject:[[NSUUID UUID] UUIDString] forKey:@"machine_code"];
     
-    [GWNetWorking request:MemberLoginURL WithParam:dic withMethod:POST_GW uploadFileProgress:^(NSProgress *uploadProgress) {
-        
-    } success:^(id result,NSURLResponse *response) {
-        
-        NSLog(@"---result=%@",result);
-    } failure:^(NSError *erro) {
-        
+    NSDictionary *paramDict = @{
+                                @"username":@"520it",
+                                @"pwd":@"520it",
+                                @"type":@"JSON"
+                                };
+    [GWNetWorking request:@"http://120.25.226.186:32812/login" WithParam:paramDict withMethod:GET_GW success:^(id result, NSURLResponse *response) {
+        NSLog(@"---%@",result);
+    } failure:^(NSError *error) {
+        NSLog(@"%@",error);
     }];
+    
 }
+
 
 
 - (void)didReceiveMemoryWarning {

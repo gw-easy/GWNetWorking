@@ -15,14 +15,64 @@
 #define setNetworkActivityIndicatorVisible(x) [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:x];
 
 #define GWNetWorking_Share [GWNetWorking shareGWNetWorking]
+#define GWNetQueueGroup_Share [GWNetQueueGroup shareGWNetQueueGroup]
 
-@interface GWNetWorking(){
+@interface GWNetQueueGroup : NSObject{
+    @public
     dispatch_queue_t GW_Async_Queue;
     dispatch_group_t GW_Async_Group;
     dispatch_queue_t GW_Sync_Queue;
     dispatch_group_t GW_Sync_Group;
+    dispatch_semaphore_t sema_t;
 }
+
+@end
+
+@implementation GWNetQueueGroup
+
+static GWNetQueueGroup *baseGroup = nil;
++ (instancetype)shareGWNetQueueGroup{
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        //        [[self alloc] init] 与allocWithZone造成死锁 需要用父类的allocWithZone初始化
+        baseGroup = [[super allocWithZone:NULL] init];
+    });
+    return baseGroup;
+}
+
++(instancetype)allocWithZone:(struct _NSZone *)zone{
+    return [GWNetQueueGroup shareGWNetQueueGroup];
+}
+
+- (id)copy{
+    return [GWNetQueueGroup shareGWNetQueueGroup];
+}
+
+- (id)mutableCopy{
+    return [GWNetQueueGroup shareGWNetQueueGroup];
+}
+
+- (instancetype)init{
+    if (self = [super init]) {
+//        自建并行线程
+        GW_Async_Queue = dispatch_queue_create("GW_Async_Queue", DISPATCH_QUEUE_CONCURRENT);
+        GW_Async_Group = dispatch_group_create();
+//        自建串行线程
+        GW_Sync_Queue = dispatch_queue_create("GW_Sync_Queue", NULL);
+        GW_Sync_Group = dispatch_group_create();
+        sema_t = dispatch_semaphore_create(0);
+    }
+    return self;
+}
+
+
+
+@end
+
+@interface GWNetWorking()
 @property (strong, nonatomic) AFHTTPSessionManager *sessionManager;
+
+@property (strong, nonatomic) GWNetQueueGroup *queueGroup;
 
 @property (readwrite,strong, nonatomic) NSMutableArray *taskArray;
 
@@ -57,10 +107,7 @@ static GWNetWorking *baseNet = nil;
 - (instancetype)init{
     if (self = [super init]) {
         // 创建全局并行
-        GW_Async_Queue = dispatch_queue_create("GW_Async_Queue", NULL);
-        GW_Async_Group = dispatch_group_create();
-        GW_Sync_Queue = dispatch_queue_create("GW_Sync_Queue", NULL);
-        GW_Sync_Group = dispatch_group_create();
+        
         
         _taskArray = [[NSMutableArray alloc] init];
 
@@ -110,6 +157,13 @@ static GWNetWorking *baseNet = nil;
 
 
 
++ (void)GWAsyncQueueNotification:(void(^)(void))block{
+    dispatch_group_notify(GWNetQueueGroup_Share->GW_Async_Group, GWNetQueueGroup_Share->GW_Async_Queue, block);
+}
+
++ (void)GWSyncQueueNotification:(void(^)(void))block{
+    dispatch_group_notify(GWNetQueueGroup_Share->GW_Sync_Group, GWNetQueueGroup_Share->GW_Sync_Queue, block);
+}
 
 + (void)request:(NSString*)taskID
             WithParam:(id)param
@@ -118,8 +172,22 @@ static GWNetWorking *baseNet = nil;
               failure:(void(^)(NSError *error))failure{
     
     [self request:taskID WithParam:param withMethod:method uploadFileProgress:nil success:success failure:failure];
-    
-    
+}
+
++ (void)GWAsyncQueueRequest:(NSString*)taskID
+                  WithParam:(id)param
+                 withMethod:(HTTPRequestType_GW)method
+                    success:(void(^)(id result,NSURLResponse *response))success
+                    failure:(void(^)(NSError *error))failure{
+    [self GWAsyncQueueRequest:taskID WithParam:param withMethod:method uploadFileProgress:nil success:success failure:failure];
+}
+
++ (void)GWSyncQueueRequest:(NSString*)taskID
+                  WithParam:(id)param
+                 withMethod:(HTTPRequestType_GW)method
+                    success:(void(^)(id result,NSURLResponse *response))success
+                    failure:(void(^)(NSError *error))failure{
+    [self GWSyncQueueRequest:taskID WithParam:param withMethod:method uploadFileProgress:nil success:success failure:failure];
 }
 
 + (void)request:(NSString*)taskID
@@ -136,6 +204,52 @@ static GWNetWorking *baseNet = nil;
     [GWNetWorking_Share requestDataTask:request success:success failure:failure uploadFileProgress:uploadFileProgress];
 }
 
++ (void)GWAsyncQueueRequest:(NSString*)taskID
+                  WithParam:(id)param
+                 withMethod:(HTTPRequestType_GW)method
+         uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
+                    success:(void(^)(id result,NSURLResponse *response))success
+                    failure:(void(^)(NSError *error))failure{
+    dispatch_group_enter(GWNetQueueGroup_Share->GW_Async_Group);
+    dispatch_group_async(GWNetQueueGroup_Share->GW_Async_Group, GWNetQueueGroup_Share->GW_Async_Queue, ^{
+        [self request:taskID WithParam:param withMethod:method uploadFileProgress:uploadFileProgress success:^(id result, NSURLResponse *response) {
+            if (success) {
+                success(result,response);
+            }
+            dispatch_group_leave(GWNetQueueGroup_Share->GW_Async_Group);
+        } failure:^(NSError *error) {
+            if (failure) {
+                failure(error);
+            }
+            dispatch_group_leave(GWNetQueueGroup_Share->GW_Async_Group);
+        }];
+    });
+}
+
++ (void)GWSyncQueueRequest:(NSString*)taskID
+                 WithParam:(id)param
+                withMethod:(HTTPRequestType_GW)method
+        uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
+                   success:(void(^)(id result,NSURLResponse *response))success
+                   failure:(void(^)(NSError *error))failure{
+    
+    dispatch_group_async(GWNetQueueGroup_Share->GW_Sync_Group, GWNetQueueGroup_Share->GW_Sync_Queue, ^{
+        [self request:taskID WithParam:param withMethod:method uploadFileProgress:uploadFileProgress success:^(id result, NSURLResponse *response) {
+            if (success) {
+                success(result,response);
+            }
+            dispatch_semaphore_signal(GWNetQueueGroup_Share->sema_t);
+        } failure:^(NSError *error) {
+            if (failure) {
+                failure(error);
+            }
+            dispatch_semaphore_signal(GWNetQueueGroup_Share->sema_t);
+        }];
+        dispatch_semaphore_wait(GWNetQueueGroup_Share->sema_t, DISPATCH_TIME_FOREVER);
+    });
+    
+}
+
 + (void)request:(NSString*)taskID
       WithParam:(NSDictionary*)param
      withMethod:(HTTPRequestType_GW)method
@@ -149,6 +263,54 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
     NSMutableURLRequest *request = [GWNetWorking_Share.sessionManager.requestSerializer multipartFormRequestWithMethod:[GWNetWorking_Share getStringForRequestType:method] URLString:taskID parameters:param constructingBodyWithBlock:block error:nil];
     
     [GWNetWorking_Share requestDataTask:request success:success failure:failure uploadFileProgress:uploadFileProgress];
+}
+
++ (void)GWAsyncQueueRequest:(NSString*)taskID
+                  WithParam:(id)param
+                 withMethod:(HTTPRequestType_GW)method
+  constructingBodyWithBlock:(void (^)(id <AFMultipartFormData> formData))block
+         uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
+                    success:(void(^)(id result,NSURLResponse *response))success
+                    failure:(void(^)(NSError *error))failure{
+    dispatch_group_enter(GWNetQueueGroup_Share->GW_Async_Group);
+    dispatch_group_async(GWNetQueueGroup_Share->GW_Async_Group, GWNetQueueGroup_Share->GW_Async_Queue, ^{
+        [self request:taskID WithParam:param withMethod:method constructingBodyWithBlock:block uploadFileProgress:uploadFileProgress success:^(id result, NSURLResponse *response) {
+            if (success) {
+                success(result,response);
+            }
+            dispatch_group_leave(GWNetQueueGroup_Share->GW_Async_Group);
+        } failure:^(NSError *error) {
+            if (failure) {
+                failure(error);
+            }
+            dispatch_group_leave(GWNetQueueGroup_Share->GW_Async_Group);
+        }];
+    });
+}
+
++ (void)GWSyncQueueRequest:(NSString*)taskID
+                 WithParam:(id)param
+                withMethod:(HTTPRequestType_GW)method
+ constructingBodyWithBlock:(void (^)(id <AFMultipartFormData> formData))block
+        uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
+                   success:(void(^)(id result,NSURLResponse *response))success
+                   failure:(void(^)(NSError *error))failure{
+    
+    dispatch_group_async(GWNetQueueGroup_Share->GW_Sync_Group, GWNetQueueGroup_Share->GW_Sync_Queue, ^{
+        [self request:taskID WithParam:param withMethod:method constructingBodyWithBlock:block uploadFileProgress:uploadFileProgress success:^(id result, NSURLResponse *response) {
+            if (success) {
+                success(result,response);
+            }
+            dispatch_semaphore_signal(GWNetQueueGroup_Share->sema_t);
+        } failure:^(NSError *error) {
+            if (failure) {
+                failure(error);
+            }
+            dispatch_semaphore_signal(GWNetQueueGroup_Share->sema_t);
+        }];
+        dispatch_semaphore_wait(GWNetQueueGroup_Share->sema_t, DISPATCH_TIME_FOREVER);
+    });
+    
 }
 
 + (void)request:(NSString*)taskID
@@ -286,6 +448,54 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
     
 }
 
++ (void)GWAsyncQueueDownloadFileWithURLString:(NSString *)URLString
+                                   WithParam:(NSDictionary *)param
+                                  withMethod:(HTTPRequestType_GW)method
+                        downloadFileProgress:(void(^)(NSProgress *downloadProgress))downloadFileProgress
+                               setupFilePath:(NSURL * (^)(NSURL *targetPath, NSURLResponse *response))setupFilePath
+                   downloadCompletionHandler:(void (^)(NSURL *filePath, NSError *error))downloadCompletionHandler{
+    dispatch_group_enter(GWNetQueueGroup_Share->GW_Async_Group);
+    dispatch_group_async(GWNetQueueGroup_Share->GW_Async_Group, GWNetQueueGroup_Share->GW_Async_Queue, ^{
+        NSMutableURLRequest *request = [GWNetWorking_Share.sessionManager.requestSerializer requestWithMethod:[GWNetWorking_Share getStringForRequestType:method] URLString:[[NSURL URLWithString:URLString relativeToURL:GWNetWorking_Share.sessionManager.baseURL] absoluteString] parameters:param error:nil];
+        
+        NSURLSessionDownloadTask *dataTask = [GWNetWorking_Share.sessionManager downloadTaskWithRequest:request progress:downloadFileProgress destination:setupFilePath completionHandler:^(NSURLResponse * _Nonnull response, NSURL * _Nullable filePath, NSError * _Nullable error) {
+            
+            /**
+             *  下载完成
+             */
+            downloadCompletionHandler(filePath,error);
+            dispatch_group_leave(GWNetQueueGroup_Share->GW_Async_Group);
+        }];
+        [dataTask resume];
+    });
+}
+
++ (void)GWSyncQueueDownloadFileWithURLString:(NSString *)URLString
+                               WithParam:(NSDictionary *)param
+                              withMethod:(HTTPRequestType_GW)method
+                    downloadFileProgress:(void(^)(NSProgress *downloadProgress))downloadFileProgress
+                           setupFilePath:(NSURL * (^)(NSURL *targetPath, NSURLResponse *response))setupFilePath
+               downloadCompletionHandler:(void (^)(NSURL *filePath, NSError *error))downloadCompletionHandler{
+    
+    
+    dispatch_group_async(GWNetQueueGroup_Share->GW_Sync_Group, GWNetQueueGroup_Share->GW_Sync_Queue, ^{
+        NSMutableURLRequest *request = [GWNetWorking_Share.sessionManager.requestSerializer requestWithMethod:[GWNetWorking_Share getStringForRequestType:method] URLString:[[NSURL URLWithString:URLString relativeToURL:GWNetWorking_Share.sessionManager.baseURL] absoluteString] parameters:param error:nil];
+        
+        NSURLSessionDownloadTask *dataTask = [GWNetWorking_Share.sessionManager downloadTaskWithRequest:request progress:downloadFileProgress destination:setupFilePath completionHandler:^(NSURLResponse * _Nonnull response, NSURL * _Nullable filePath, NSError * _Nullable error) {
+            
+            /**
+             *  下载完成
+             */
+            downloadCompletionHandler(filePath,error);
+            dispatch_semaphore_signal(GWNetQueueGroup_Share->sema_t);
+            
+        }];
+        [dataTask resume];
+        dispatch_semaphore_wait(GWNetQueueGroup_Share->sema_t, DISPATCH_TIME_FOREVER);
+    });
+    
+    
+}
 
 #pragma mark - commonAction
 - (void)requestDataTask:(NSMutableURLRequest *)request

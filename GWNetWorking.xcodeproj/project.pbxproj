@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C40D5277222B77AD0048DB08 /* AsyncViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C40D5276222B77AD0048DB08 /* AsyncViewController.m */; };
+		C40D527A222B93810048DB08 /* SyncViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C40D5279222B93810048DB08 /* SyncViewController.m */; };
 		C41496D02068984E00F0CB58 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = C41496CF2068984E00F0CB58 /* AppDelegate.m */; };
 		C41496D32068984E00F0CB58 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = C41496D22068984E00F0CB58 /* ViewController.m */; };
 		C41496D62068984E00F0CB58 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C41496D42068984E00F0CB58 /* Main.storyboard */; };
@@ -46,6 +48,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		C40D5275222B77AD0048DB08 /* AsyncViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AsyncViewController.h; sourceTree = "<group>"; };
+		C40D5276222B77AD0048DB08 /* AsyncViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AsyncViewController.m; sourceTree = "<group>"; };
+		C40D5278222B93810048DB08 /* SyncViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SyncViewController.h; sourceTree = "<group>"; };
+		C40D5279222B93810048DB08 /* SyncViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SyncViewController.m; sourceTree = "<group>"; };
 		C41496CB2068984E00F0CB58 /* GWNetWorking.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GWNetWorking.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C41496CE2068984E00F0CB58 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		C41496CF2068984E00F0CB58 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -144,6 +150,10 @@
 				C41496CF2068984E00F0CB58 /* AppDelegate.m */,
 				C41496D12068984E00F0CB58 /* ViewController.h */,
 				C41496D22068984E00F0CB58 /* ViewController.m */,
+				C40D5275222B77AD0048DB08 /* AsyncViewController.h */,
+				C40D5276222B77AD0048DB08 /* AsyncViewController.m */,
+				C40D5278222B93810048DB08 /* SyncViewController.h */,
+				C40D5279222B93810048DB08 /* SyncViewController.m */,
 				C41496D42068984E00F0CB58 /* Main.storyboard */,
 				C41496D72068984E00F0CB58 /* Assets.xcassets */,
 				C41496D92068984E00F0CB58 /* LaunchScreen.storyboard */,
@@ -384,10 +394,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C40D5277222B77AD0048DB08 /* AsyncViewController.m in Sources */,
 				C41497162068988500F0CB58 /* AFURLSessionManager.m in Sources */,
 				C41496D32068984E00F0CB58 /* ViewController.m in Sources */,
 				C41496DE2068984E00F0CB58 /* main.m in Sources */,
 				C4FBDA1020AAB3530037551B /* VoiceConverter.mm in Sources */,
+				C40D527A222B93810048DB08 /* SyncViewController.m in Sources */,
 				C41497122068988500F0CB58 /* AFNetworkReachabilityManager.m in Sources */,
 				C41496D02068984E00F0CB58 /* AppDelegate.m in Sources */,
 				C41497172068988500F0CB58 /* GWNetWorking.m in Sources */,
