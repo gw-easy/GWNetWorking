@@ -155,7 +155,10 @@ static GWNetWorking *baseNet = nil;
     return self;
 }
 
-
++ (NSMutableDictionary *)getCommonDict{
+    NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
+    return dict;
+}
 
 + (void)GWAsyncQueueNotification:(void(^)(void))block{
     dispatch_group_notify(GWNetQueueGroup_Share->GW_Async_Group, GWNetQueueGroup_Share->GW_Async_Queue, block);
@@ -574,18 +577,23 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
     if (!response) {
         return;
     }
-    if (GWNetWorking_Share.taskArray.count) {
-        for (NSURLSessionTask *task in GWNetWorking_Share.taskArray) {
-            if ([task.response.URL isEqual:response.URL]) {
-                [GWNetWorking_Share.taskArray removeObject:task];
+    @synchronized (self) {
+        if (self.taskArray.count) {
+            for (NSURLSessionTask *task in self.taskArray) {
+                if ([task.response.URL isEqual:response.URL]) {
+                    [self.taskArray removeObject:task];
+                    break;
+                }
             }
         }
     }
 }
 
 - (void)cancelAllTask{
-    for (NSURLSessionTask *task in self.taskArray) {
-        [task cancel];
+    @synchronized (self) {
+        for (NSURLSessionTask *task in self.taskArray) {
+            [task cancel];
+        }
     }
 }
 
@@ -594,11 +602,13 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 }
 
 - (void)cancelNoCurrentAllTask{
-    for (NSURLSessionTask *task in self.taskArray) {
-        if ([task.response.URL isEqual:_currentTask.response.URL]) {
-            continue;
+    @synchronized (self) {
+        for (NSURLSessionTask *task in self.taskArray) {
+            if ([task.response.URL isEqual:_currentTask.response.URL]) {
+                continue;
+            }
+            [task cancel];
         }
-        [task cancel];
     }
 }
 

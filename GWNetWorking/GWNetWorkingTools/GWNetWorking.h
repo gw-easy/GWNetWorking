@@ -20,8 +20,10 @@ typedef enum : NSUInteger {
 @property (readonly,strong, nonatomic) NSMutableArray *taskArray;
 
 + (instancetype)shareGWNetWorking;
-
-
+/**
+ 添加公共请求参数
+ */
++ (NSMutableDictionary *)getCommonDict;
 
 /**
  //异步线程组任务完成通知
