@@ -313,3 +313,13 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 
 
 @end
+
+#pragma mark - 表单请求
+@interface GWFormNetWorking : GWNetWorking
+
+@end
+
+#pragma mark - json请求
+@interface GWJsonNetWorking : GWNetWorking
+
+@end
