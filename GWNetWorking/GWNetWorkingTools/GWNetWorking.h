@@ -15,6 +15,16 @@ typedef enum : NSUInteger {
     DELETE_GW
 } HTTPRequestType_GW;
 
+typedef enum : NSUInteger {
+    //    暂无数据
+    WithoutData_GW = 0,
+    //    无网络
+    WithoutNet_GW,
+    //    请求失败
+    RequestError_GW
+} HTTPResultError_GW;
+
+typedef void(^ResultErrorBlock)(HTTPResultError_GW result);
 @interface GWNetWorking : NSObject
 //任务数组
 @property (readonly,strong, nonatomic) NSMutableArray *taskArray;
@@ -37,31 +47,84 @@ typedef enum : NSUInteger {
  */
 + (void)GWSyncQueueNotification:(void(^)(void))block;
 
+
+
 /**
  不带进度
-
- @param taskID 请求url
+ 
+ @param requestUrl 请求url
  @param param 参数
  @param method 方式
  @param success 成功
  @param failure 失败
  */
-+ (void)request:(NSString*)taskID
++ (void)request:(NSString*)requestUrl
       WithParam:(id)param
      withMethod:(HTTPRequestType_GW)method
         success:(void(^)(id result,NSURLResponse *response))success
         failure:(void(^)(NSError *error))failure;
 
 /**
- 异步线程组 -- 不带进度
+ 不带进度-不带loading
  
- @param taskID 请求url
+ @param requestUrl 请求url
  @param param 参数
  @param method 方式
  @param success 成功
  @param failure 失败
  */
-+ (void)GWAsyncQueueRequest:(NSString*)taskID
++ (void)withoutLoadingRequest:(NSString*)requestUrl
+                    WithParam:(id)param
+                   withMethod:(HTTPRequestType_GW)method
+                      success:(void(^)(id result,NSURLResponse *response))success
+                      failure:(void(^)(NSError *error))failure;
+
+/**
+ 不带进度-可显示到指定view
+ 
+ @param requestUrl 请求url
+ @param param 参数
+ @param method 方式
+ @param success 成功
+ @param failure 失败
+ @param blockAction 备用回调 如网络发生错误需要点击刷新数据的要求
+ */
++ (void)request:(NSString*)requestUrl
+      WithParam:(id)param
+     withMethod:(HTTPRequestType_GW)method
+       showView:(UIView *)showView
+        success:(void(^)(id result,NSURLResponse *response))success
+        failure:(void(^)(NSError *error))failure
+    blockAction:(ResultErrorBlock)blockAction;
+
+/**
+ 不带进度-不带loading-可显示到指定view
+ 
+ @param requestUrl 请求url
+ @param param 参数
+ @param method 方式
+ @param success 成功
+ @param failure 失败
+ @param blockAction 备用回调 如网络发生错误需要点击刷新数据的要求
+ */
++ (void)withoutLoadingRequest:(NSString*)requestUrl
+                    WithParam:(id)param
+                   withMethod:(HTTPRequestType_GW)method
+                     showView:(UIView *)showView
+                      success:(void(^)(id result,NSURLResponse *response))success
+                      failure:(void(^)(NSError *error))failure
+                  blockAction:(ResultErrorBlock)blockAction;
+
+/**
+ 异步线程组 -- 不带进度
+ 
+ @param requestUrl 请求url
+ @param param 参数
+ @param method 方式
+ @param success 成功
+ @param failure 失败
+ */
++ (void)GWAsyncQueueRequest:(NSString*)requestUrl
                   WithParam:(id)param
                  withMethod:(HTTPRequestType_GW)method
                     success:(void(^)(id result,NSURLResponse *response))success
@@ -70,13 +133,13 @@ typedef enum : NSUInteger {
 /**
  同步线程组 -- 不带进度
  
- @param taskID 请求url
+ @param requestUrl 请求url
  @param param 参数
  @param method 方式
  @param success 成功
  @param failure 失败
  */
-+ (void)GWSyncQueueRequest:(NSString*)taskID
++ (void)GWSyncQueueRequest:(NSString*)requestUrl
                  WithParam:(id)param
                 withMethod:(HTTPRequestType_GW)method
                    success:(void(^)(id result,NSURLResponse *response))success
@@ -84,15 +147,15 @@ typedef enum : NSUInteger {
 
 /**
  带进度条
-
- @param taskID 请求url
+ 
+ @param requestUrl 请求url
  @param param 参数
  @param method 方式
  @param uploadFileProgress 进度
  @param success 成功
  @param failure 失败
  */
-+ (void)request:(NSString*)taskID
++ (void)request:(NSString*)requestUrl
       WithParam:(id)param
      withMethod:(HTTPRequestType_GW)method
 uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
@@ -100,16 +163,73 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
         failure:(void(^)(NSError *error))failure;
 
 /**
- 异步线程组 -- 带进度条
+ 带进度条-不带loading
  
- @param taskID 请求url
+ @param requestUrl 请求url
  @param param 参数
  @param method 方式
  @param uploadFileProgress 进度
  @param success 成功
  @param failure 失败
  */
-+ (void)GWAsyncQueueRequest:(NSString*)taskID
++ (void)withoutLoadingRequest:(NSString*)requestUrl
+                    WithParam:(id)param
+                   withMethod:(HTTPRequestType_GW)method
+           uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
+                      success:(void(^)(id result,NSURLResponse *response))success
+                      failure:(void(^)(NSError *error))failure;
+
+/**
+ 带进度条-可显示到指定view
+ 
+ @param requestUrl 请求requesturl
+ @param param 参数
+ @param method 方式
+ @param uploadFileProgress 进度
+ @param success 成功
+ @param failure 失败
+ @param blockAction 备用回调 如网络发生错误需要点击刷新数据的要求
+ */
++ (void)request:(NSString*)requestUrl
+      WithParam:(id)param
+     withMethod:(HTTPRequestType_GW)method
+       showView:(UIView *)showView
+uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
+        success:(void(^)(id result,NSURLResponse *response))success
+        failure:(void(^)(NSError *error))failure
+    blockAction:(ResultErrorBlock)blockAction;
+
+/**
+ 带进度条-不带loading-可显示到指定view
+ 
+ @param requestUrl 请求requesturl
+ @param param 参数
+ @param method 方式
+ @param uploadFileProgress 进度
+ @param success 成功
+ @param failure 失败
+ @param blockAction 备用回调 如网络发生错误需要点击刷新数据的要求
+ */
++ (void)withoutLoadingRequest:(NSString*)requestUrl
+                    WithParam:(id)param
+                   withMethod:(HTTPRequestType_GW)method
+                     showView:(UIView *)showView
+           uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
+                      success:(void(^)(id result,NSURLResponse *response))success
+                      failure:(void(^)(NSError *error))failure
+                  blockAction:(ResultErrorBlock)blockAction;
+
+/**
+ 异步线程组 -- 带进度条
+ 
+ @param requestUrl 请求url
+ @param param 参数
+ @param method 方式
+ @param uploadFileProgress 进度
+ @param success 成功
+ @param failure 失败
+ */
++ (void)GWAsyncQueueRequest:(NSString*)requestUrl
                   WithParam:(id)param
                  withMethod:(HTTPRequestType_GW)method
          uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
@@ -119,14 +239,14 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 /**
  同步线程组 -- 带进度条
  
- @param taskID 请求url
+ @param requestUrl 请求url
  @param param 参数
  @param method 方式
  @param uploadFileProgress 进度
  @param success 成功
  @param failure 失败
  */
-+ (void)GWSyncQueueRequest:(NSString*)taskID
++ (void)GWSyncQueueRequest:(NSString*)requestUrl
                  WithParam:(id)param
                 withMethod:(HTTPRequestType_GW)method
         uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
@@ -136,7 +256,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 /**
  上传
  
- @param taskID 请求url
+ @param requestUrl 请求url
  @param param 参数
  @param method 方式
  @param block 上传block
@@ -144,7 +264,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
  @param success 成功
  @param failure 失败
  */
-+ (void)request:(NSString*)taskID
++ (void)request:(NSString*)requestUrl
       WithParam:(NSDictionary*)param
      withMethod:(HTTPRequestType_GW)method
 constructingBodyWithBlock:(void (^)(id <AFMultipartFormData> formData))block
@@ -155,7 +275,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 /**
  异步线程组 -- 上传
  
- @param taskID 请求url
+ @param requestUrl 请求url
  @param param 参数
  @param method 方式
  @param block 上传block
@@ -163,7 +283,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
  @param success 成功
  @param failure 失败
  */
-+ (void)GWAsyncQueueRequest:(NSString*)taskID
++ (void)GWAsyncQueueRequest:(NSString*)requestUrl
                   WithParam:(id)param
                  withMethod:(HTTPRequestType_GW)method
   constructingBodyWithBlock:(void (^)(id <AFMultipartFormData> formData))block
@@ -174,7 +294,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 /**
  同步线程组 -- 上传
  
- @param taskID 请求url
+ @param requestUrl 请求url
  @param param 参数
  @param method 方式
  @param block 上传block
@@ -182,7 +302,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
  @param success 成功
  @param failure 失败
  */
-+ (void)GWSyncQueueRequest:(NSString*)taskID
++ (void)GWSyncQueueRequest:(NSString*)requestUrl
                  WithParam:(id)param
                 withMethod:(HTTPRequestType_GW)method
  constructingBodyWithBlock:(void (^)(id <AFMultipartFormData> formData))block
@@ -192,8 +312,8 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 
 /**
  图片上传
-
- @param taskID 请求url
+ 
+ @param requestUrl 请求url
  @param param 参数
  @param Exparam 图片参数
  @param method 方式
@@ -201,7 +321,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
  @param success 成功
  @param failure 失败
  */
-+ (void)request:(NSString*)taskID
++ (void)request:(NSString*)requestUrl
       WithParam:(NSDictionary*)param
     withExParam:(NSDictionary*)Exparam
      withMethod:(HTTPRequestType_GW)method
@@ -213,8 +333,8 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 
 /**
  上传音频文件
-
- @param taskID 请求url
+ 
+ @param requestUrl 请求url
  @param param 参数
  @param Exparam 音频参数
  @param method 方式
@@ -222,7 +342,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
  @param success 成功
  @param failure 失败
  */
-+ (void)requestSoundFileRequest:(NSString*)taskID
++ (void)requestSoundFileRequest:(NSString*)requestUrl
                       WithParam:(NSDictionary *)param
                     withExParam:(NSDictionary*)Exparam
                      withMethod:(HTTPRequestType_GW)method
@@ -234,7 +354,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 
 /**
  上传视频文件
-
+ 
  @param URLString 请求url
  @param param 参数
  @param videoPath 视频路径
@@ -252,7 +372,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
                                 failure:(void(^)(NSError *error))failure;
 /**
  下载文件
-
+ 
  @param URLString 请求url
  @param param 参数
  @param method 方式

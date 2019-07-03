@@ -8,11 +8,12 @@
 
 #import "GWNetWorking.h"
 #import <objc/runtime.h>
+#import "VoiceConverter.h"
 @class GWFormNetWorking;
 @class GWJsonNetWorking;
-#import "VoiceConverter.h"
+
 //设置超时时间
-#define Time_Out_GWSet 30.0f
+#define Time_Out_GWSet 10.0f
 
 //是否显示手机状态栏loading标记
 #define setNetworkActivityIndicatorVisible(x) [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:x];
@@ -37,8 +38,6 @@ static GWNetQueueGroup *baseGroup = nil;
 + (instancetype)shareGWNetQueueGroup{
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        //        [[self alloc] init] 与allocWithZone造成死锁 需要用父类的allocWithZone初始化
-        
         baseGroup = [[super allocWithZone:NULL] init];
     });
     return baseGroup;
@@ -74,7 +73,7 @@ static GWNetQueueGroup *baseGroup = nil;
 @end
 
 
-
+const void *GW_ins = @"GW_Instance";
 @interface GWNetWorking()
 @property (strong, nonatomic) AFHTTPSessionManager *sessionManager;
 
@@ -90,10 +89,10 @@ static GWNetQueueGroup *baseGroup = nil;
 static GWNetWorking *baseNet = nil;
 
 +(instancetype)shareGWNetWorking{
-    id instance = objc_getAssociatedObject(self, @"instance");
+    id instance = objc_getAssociatedObject(self, GW_ins);
     if (!instance){
         instance = [[super allocWithZone:NULL] init];
-        objc_setAssociatedObject(self, @"instance", instance, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        objc_setAssociatedObject(self, GW_ins, instance, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
     return instance;
 }
@@ -136,11 +135,11 @@ static GWNetWorking *baseNet = nil;
         //        表单形式
         self.sessionManager.requestSerializer = [AFHTTPRequestSerializer serializer];
         self.sessionManager.responseSerializer = [AFHTTPResponseSerializer serializer];
-//        [self.sessionManager.requestSerializer setValue:UserInfoManagerModel.gradeId forHTTPHeaderField:@"gradeId"];
-//        [self.sessionManager.requestSerializer setValue:UserInfoManagerModel.token forHTTPHeaderField:@"token"];
+        //        [self.sessionManager.requestSerializer setValue:UserInfoManagerModel.gradeId forHTTPHeaderField:@"gradeId"];
+        //        [self.sessionManager.requestSerializer setValue:UserInfoManagerModel.token forHTTPHeaderField:@"token"];
     }
     
-    
+   
     //        响应服务器的文件格式
     self.sessionManager.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json", @"text/json",@"text/html", @"text/plain",@"text/javascript",@"charset/UTF-8",nil];
     //是否需要cookies缓存
@@ -180,55 +179,83 @@ static GWNetWorking *baseNet = nil;
     dispatch_group_notify(GWNetQueueGroup_Share->GW_Sync_Group, GWNetQueueGroup_Share->GW_Sync_Queue, block);
 }
 
-+ (void)request:(NSString*)taskID
-      WithParam:(id)param
-     withMethod:(HTTPRequestType_GW)method
-  isJsonRequest:(BOOL)isJsonRequest
-        success:(void(^)(id result,NSURLResponse *response))success
-        failure:(void(^)(NSError *error))failure{
-    [GWNetWorking_Share setSessionManagerConfigerIsJson:isJsonRequest];
-    [self request:taskID WithParam:param withMethod:method uploadFileProgress:nil success:success failure:failure];
-}
-
-+ (void)request:(NSString*)taskID
+//不带进度
++ (void)request:(NSString*)requestUrl
       WithParam:(id)param
      withMethod:(HTTPRequestType_GW)method
         success:(void(^)(id result,NSURLResponse *response))success
         failure:(void(^)(NSError *error))failure{
     
-    [self request:taskID WithParam:param withMethod:method uploadFileProgress:nil success:success failure:failure];
+    [self request:requestUrl WithParam:param withMethod:method showView:nil success:success failure:failure blockAction:nil];
 }
 
-+ (void)GWAsyncQueueRequest:(NSString*)taskID
+// 不带进度-不带loading
++ (void)withoutLoadingRequest:(NSString *)requestUrl WithParam:(id)param withMethod:(HTTPRequestType_GW)method success:(void (^)(id, NSURLResponse *))success failure:(void (^)(NSError *))failure{
+    [self withoutLoadingRequest:requestUrl WithParam:param withMethod:method uploadFileProgress:nil success:success failure:failure];
+}
+
+//不带进度-可显示到指定view
++ (void)request:(NSString *)requestUrl WithParam:(id)param withMethod:(HTTPRequestType_GW)method showView:(UIView *)showView success:(void (^)(id, NSURLResponse *))success failure:(void (^)(NSError *))failure blockAction:(ResultErrorBlock)blockAction{
+    [self request:requestUrl WithParam:param withMethod:method showView:showView uploadFileProgress:nil success:success failure:failure blockAction:blockAction];
+}
+
+//不带进度-不带loading-可显示到指定view
++ (void)withoutLoadingRequest:(NSString *)requestUrl WithParam:(id)param withMethod:(HTTPRequestType_GW)method showView:(UIView *)showView success:(void (^)(id, NSURLResponse *))success failure:(void (^)(NSError *))failure blockAction:(ResultErrorBlock)blockAction{
+    [self withoutLoadingRequest:requestUrl WithParam:param withMethod:method showView:showView uploadFileProgress:nil success:success failure:failure blockAction:blockAction];
+}
+
+
++ (void)GWAsyncQueueRequest:(NSString*)requestUrl
                   WithParam:(id)param
                  withMethod:(HTTPRequestType_GW)method
                     success:(void(^)(id result,NSURLResponse *response))success
                     failure:(void(^)(NSError *error))failure{
-    [self GWAsyncQueueRequest:taskID WithParam:param withMethod:method uploadFileProgress:nil success:success failure:failure];
+    [self GWAsyncQueueRequest:requestUrl WithParam:param withMethod:method uploadFileProgress:nil success:success failure:failure];
 }
 
-+ (void)GWSyncQueueRequest:(NSString*)taskID
++ (void)GWSyncQueueRequest:(NSString*)requestUrl
                  WithParam:(id)param
                 withMethod:(HTTPRequestType_GW)method
                    success:(void(^)(id result,NSURLResponse *response))success
                    failure:(void(^)(NSError *error))failure{
-    [self GWSyncQueueRequest:taskID WithParam:param withMethod:method uploadFileProgress:nil success:success failure:failure];
+    [self GWSyncQueueRequest:requestUrl WithParam:param withMethod:method uploadFileProgress:nil success:success failure:failure];
 }
 
-+ (void)request:(NSString*)taskID
+// 带进度条
++ (void)request:(NSString*)requestUrl
       WithParam:(id)param
      withMethod:(HTTPRequestType_GW)method
 uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
         success:(void(^)(id result,NSURLResponse *response))success
         failure:(void(^)(NSError *error))failure{
     
-    setNetworkActivityIndicatorVisible(YES)
+    [self request:requestUrl WithParam:param withMethod:method showView:nil uploadFileProgress:uploadFileProgress success:success failure:failure blockAction:nil];
     
-    NSMutableURLRequest *request = [[GWNetWorking_Share sessionManager].requestSerializer requestWithMethod:[GWNetWorking_Share getStringForRequestType:method] URLString:[[NSURL URLWithString:taskID relativeToURL:[GWNetWorking_Share sessionManager].baseURL] absoluteString] parameters:param error:nil];
-    [GWNetWorking_Share requestDataTask:request success:success failure:failure uploadFileProgress:uploadFileProgress];
 }
 
-+ (void)GWAsyncQueueRequest:(NSString*)taskID
+//带进度条-不带loading
++ (void)withoutLoadingRequest:(NSString *)requestUrl WithParam:(id)param withMethod:(HTTPRequestType_GW)method uploadFileProgress:(void (^)(NSProgress *))uploadFileProgress success:(void (^)(id, NSURLResponse *))success failure:(void (^)(NSError *))failure{
+    [self withoutLoadingRequest:requestUrl WithParam:param withMethod:method showView:nil uploadFileProgress:uploadFileProgress success:success failure:failure blockAction:nil];
+}
+
+//带进度条-可显示到指定view
++(void)request:(NSString *)requestUrl WithParam:(id)param withMethod:(HTTPRequestType_GW)method showView:(UIView *)showView uploadFileProgress:(void (^)(NSProgress *))uploadFileProgress success:(void (^)(id, NSURLResponse *))success failure:(void (^)(NSError *))failure blockAction:(ResultErrorBlock)blockAction{
+    [self commentRequest:requestUrl WithParam:param withMethod:method showView:showView uploadFileProgress:uploadFileProgress success:success failure:failure blockAction:blockAction showLoading:YES];
+}
+
+// 带进度条-不带loading-可显示到指定view
++ (void)withoutLoadingRequest:(NSString *)requestUrl WithParam:(id)param withMethod:(HTTPRequestType_GW)method showView:(UIView *)showView uploadFileProgress:(void (^)(NSProgress *))uploadFileProgress success:(void (^)(id, NSURLResponse *))success failure:(void (^)(NSError *))failure blockAction:(ResultErrorBlock)blockAction{
+    [self commentRequest:requestUrl WithParam:param withMethod:method showView:showView uploadFileProgress:uploadFileProgress success:success failure:failure blockAction:blockAction showLoading:NO];
+}
+
+#pragma mark - requestComment
++ (void)commentRequest:(NSString *)requestUrl WithParam:(id)param withMethod:(HTTPRequestType_GW)method showView:(UIView *)showView uploadFileProgress:(void (^)(NSProgress *))uploadFileProgress success:(void (^)(id, NSURLResponse *))success failure:(void (^)(NSError *))failure blockAction:(ResultErrorBlock)blockAction showLoading:(BOOL)showLoading{
+    NSMutableURLRequest *request = [[GWNetWorking_Share sessionManager].requestSerializer requestWithMethod:[GWNetWorking_Share getStringForRequestType:method] URLString:[[NSURL URLWithString:requestUrl relativeToURL:[GWNetWorking_Share sessionManager].baseURL] absoluteString] parameters:param error:nil];
+    [GWNetWorking_Share requestDataTask:request showView:showView  success:success failure:failure uploadFileProgress:uploadFileProgress blockAction:blockAction showLoading:showLoading];
+}
+
+
++ (void)GWAsyncQueueRequest:(NSString*)requestUrl
                   WithParam:(id)param
                  withMethod:(HTTPRequestType_GW)method
          uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
@@ -236,7 +263,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
                     failure:(void(^)(NSError *error))failure{
     dispatch_group_enter(GWNetQueueGroup_Share->GW_Async_Group);
     dispatch_group_async(GWNetQueueGroup_Share->GW_Async_Group, GWNetQueueGroup_Share->GW_Async_Queue, ^{
-        [self request:taskID WithParam:param withMethod:method uploadFileProgress:uploadFileProgress success:^(id result, NSURLResponse *response) {
+        [self request:requestUrl WithParam:param withMethod:method uploadFileProgress:uploadFileProgress success:^(id result, NSURLResponse *response) {
             if (success) {
                 success(result,response);
             }
@@ -250,7 +277,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
     });
 }
 
-+ (void)GWSyncQueueRequest:(NSString*)taskID
++ (void)GWSyncQueueRequest:(NSString*)requestUrl
                  WithParam:(id)param
                 withMethod:(HTTPRequestType_GW)method
         uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
@@ -258,7 +285,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
                    failure:(void(^)(NSError *error))failure{
     
     dispatch_group_async(GWNetQueueGroup_Share->GW_Sync_Group, GWNetQueueGroup_Share->GW_Sync_Queue, ^{
-        [self request:taskID WithParam:param withMethod:method uploadFileProgress:uploadFileProgress success:^(id result, NSURLResponse *response) {
+        [self request:requestUrl WithParam:param withMethod:method uploadFileProgress:uploadFileProgress success:^(id result, NSURLResponse *response) {
             if (success) {
                 success(result,response);
             }
@@ -274,7 +301,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
     
 }
 
-+ (void)request:(NSString*)taskID
++ (void)request:(NSString*)requestUrl
       WithParam:(NSDictionary*)param
      withMethod:(HTTPRequestType_GW)method
 constructingBodyWithBlock:(void (^)(id <AFMultipartFormData> formData))block
@@ -282,14 +309,13 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
         success:(void (^)(id result,NSURLResponse *response))success
         failure:(void (^)(NSError* error))failure{
     
-    setNetworkActivityIndicatorVisible(YES)
     
-    NSMutableURLRequest *request = [[GWNetWorking_Share sessionManager].requestSerializer multipartFormRequestWithMethod:[GWNetWorking_Share getStringForRequestType:method] URLString:taskID parameters:param constructingBodyWithBlock:block error:nil];
+    NSMutableURLRequest *request = [[GWNetWorking_Share sessionManager].requestSerializer multipartFormRequestWithMethod:[GWNetWorking_Share getStringForRequestType:method] URLString:requestUrl parameters:param constructingBodyWithBlock:block error:nil];
     
-    [GWNetWorking_Share requestDataTask:request success:success failure:failure uploadFileProgress:uploadFileProgress];
+    [GWNetWorking_Share requestDataTask:request showView:nil  success:success failure:failure uploadFileProgress:uploadFileProgress blockAction:nil showLoading:YES];
 }
 
-+ (void)GWAsyncQueueRequest:(NSString*)taskID
++ (void)GWAsyncQueueRequest:(NSString*)requestUrl
                   WithParam:(id)param
                  withMethod:(HTTPRequestType_GW)method
   constructingBodyWithBlock:(void (^)(id <AFMultipartFormData> formData))block
@@ -298,7 +324,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
                     failure:(void(^)(NSError *error))failure{
     dispatch_group_enter(GWNetQueueGroup_Share->GW_Async_Group);
     dispatch_group_async(GWNetQueueGroup_Share->GW_Async_Group, GWNetQueueGroup_Share->GW_Async_Queue, ^{
-        [self request:taskID WithParam:param withMethod:method constructingBodyWithBlock:block uploadFileProgress:uploadFileProgress success:^(id result, NSURLResponse *response) {
+        [self request:requestUrl WithParam:param withMethod:method constructingBodyWithBlock:block uploadFileProgress:uploadFileProgress success:^(id result, NSURLResponse *response) {
             if (success) {
                 success(result,response);
             }
@@ -312,7 +338,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
     });
 }
 
-+ (void)GWSyncQueueRequest:(NSString*)taskID
++ (void)GWSyncQueueRequest:(NSString*)requestUrl
                  WithParam:(id)param
                 withMethod:(HTTPRequestType_GW)method
  constructingBodyWithBlock:(void (^)(id <AFMultipartFormData> formData))block
@@ -321,7 +347,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
                    failure:(void(^)(NSError *error))failure{
     
     dispatch_group_async(GWNetQueueGroup_Share->GW_Sync_Group, GWNetQueueGroup_Share->GW_Sync_Queue, ^{
-        [self request:taskID WithParam:param withMethod:method constructingBodyWithBlock:block uploadFileProgress:uploadFileProgress success:^(id result, NSURLResponse *response) {
+        [self request:requestUrl WithParam:param withMethod:method constructingBodyWithBlock:block uploadFileProgress:uploadFileProgress success:^(id result, NSURLResponse *response) {
             if (success) {
                 success(result,response);
             }
@@ -334,24 +360,23 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
         }];
         dispatch_semaphore_wait(GWNetQueueGroup_Share->sema_t, DISPATCH_TIME_FOREVER);
     });
-    
 }
 
-+ (void)request:(NSString*)taskID
-            WithParam:(NSDictionary*)param
-          withExParam:(NSDictionary*)Exparam
-           withMethod:(HTTPRequestType_GW)method
-    uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
-              success:(void (^)(id result,NSURLResponse *response))success
-            failure:(void (^)(NSError* error))failure{
-
++ (void)request:(NSString*)requestUrl
+      WithParam:(NSDictionary*)param
+    withExParam:(NSDictionary*)Exparam
+     withMethod:(HTTPRequestType_GW)method
+uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
+        success:(void (^)(id result,NSURLResponse *response))success
+        failure:(void (^)(NSError* error))failure{
+    
     setNetworkActivityIndicatorVisible(YES)
-
-    NSMutableURLRequest *request = [[GWNetWorking_Share sessionManager].requestSerializer multipartFormRequestWithMethod:[GWNetWorking_Share getStringForRequestType:method] URLString:taskID parameters:param constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
+    
+    NSMutableURLRequest *request = [[GWNetWorking_Share sessionManager].requestSerializer multipartFormRequestWithMethod:[GWNetWorking_Share getStringForRequestType:method] URLString:requestUrl parameters:param constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
         //图片上传
         if (Exparam) {
             for (NSString *key in [Exparam allKeys]) {
-//                设置图片的格式mimeType:@"image/jpeg"，@"image/jpg"
+                //                设置图片的格式mimeType:@"image/jpeg"，@"image/jpg"
                 id obj = [Exparam objectForKey:key];
                 NSData *imageData = [self imageCompressToData:obj];
                 if (!imageData) {
@@ -360,13 +385,13 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
                 [formData appendPartWithFileData:imageData name:key fileName:[NSString stringWithFormat:@"%@.png",key] mimeType:@"image/jpeg"];
             }
         }
-
+        
     } error:nil];
-
-    [GWNetWorking_Share requestDataTask:request success:success failure:failure uploadFileProgress:uploadFileProgress];
+    
+    [GWNetWorking_Share requestDataTask:request showView:nil  success:success failure:failure uploadFileProgress:uploadFileProgress blockAction:nil showLoading:YES];
 }
 
-+ (void)requestSoundFileRequest:(NSString*)taskID
++ (void)requestSoundFileRequest:(NSString*)requestUrl
                       WithParam:(NSDictionary *)param
                     withExParam:(NSDictionary*)Exparam
                      withMethod:(HTTPRequestType_GW)method
@@ -376,7 +401,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 
     setNetworkActivityIndicatorVisible(YES)
 
-    NSMutableURLRequest *request = [[GWNetWorking_Share sessionManager].requestSerializer multipartFormRequestWithMethod:[GWNetWorking_Share getStringForRequestType:method] URLString:taskID parameters:param constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
+    NSMutableURLRequest *request = [[GWNetWorking_Share sessionManager].requestSerializer multipartFormRequestWithMethod:[GWNetWorking_Share getStringForRequestType:method] URLString:requestUrl parameters:param constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
         //上传
         if (Exparam) {
             for (NSString *key in [Exparam allKeys]) {
@@ -405,8 +430,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 
     } error:nil];
 
-
-    [GWNetWorking_Share requestDataTask:request success:success failure:failure uploadFileProgress:uploadFileProgress];
+    [GWNetWorking_Share requestDataTask:request showView:nil success:success failure:failure uploadFileProgress:uploadFileProgress blockAction:nil showLoading:NO];
 
 }
 
@@ -424,7 +448,8 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
             [formData appendPartWithFileURL:[NSURL fileURLWithPath:path] name:@"" fileName:path mimeType:@"video/mpeg4" error:nil];
 
         } error:nil];
-        [netW requestDataTask:request success:success failure:failure uploadFileProgress:uploadFileProgress];
+        
+        [netW requestDataTask:request showView:nil success:success failure:failure uploadFileProgress:uploadFileProgress blockAction:nil showLoading:NO];
     }];
 
 }
@@ -437,15 +462,8 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
                downloadCompletionHandler:(void (^)(NSURL *filePath, NSError *error))downloadCompletionHandler{
     
     NSMutableURLRequest *request = [[GWNetWorking_Share sessionManager].requestSerializer requestWithMethod:[GWNetWorking_Share getStringForRequestType:method] URLString:[[NSURL URLWithString:URLString relativeToURL:[GWNetWorking_Share sessionManager].baseURL] absoluteString] parameters:param error:nil];
-    
-    NSURLSessionDownloadTask *dataTask = [[GWNetWorking_Share sessionManager] downloadTaskWithRequest:request progress:^(NSProgress * _Nonnull downloadProgress) {
-        
-        /**
-         *  下载进度
-         */
-        downloadFileProgress(downloadProgress);
-        
-    } destination:^NSURL * _Nonnull(NSURL * _Nonnull targetPath, NSURLResponse * _Nonnull response) {
+    __weak GWNetWorking *netW = GWNetWorking_Share;
+    NSURLSessionDownloadTask *dataTask = [[GWNetWorking_Share sessionManager] downloadTaskWithRequest:request progress:nil destination:^NSURL * _Nonnull(NSURL * _Nonnull targetPath, NSURLResponse * _Nonnull response) {
         
         /**
          *  设置保存目录
@@ -460,7 +478,11 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
         /**
          *  下载完成
          */
-        [GWNetWorking_Share removeTaskFromArr:response];
+        if (error) {
+            [netW removeTaskFromArr:error.userInfo[@"NSErrorFailingURLStringKey"]];
+        }else{
+            [netW removeTaskFromArr:response.URL.absoluteString];
+        }
         downloadCompletionHandler(filePath,error);
         
     }];
@@ -482,7 +504,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
     dispatch_group_async(GWNetQueueGroup_Share->GW_Async_Group, GWNetQueueGroup_Share->GW_Async_Queue, ^{
         NSMutableURLRequest *request = [[GWNetWorking_Share sessionManager].requestSerializer requestWithMethod:[GWNetWorking_Share getStringForRequestType:method] URLString:[[NSURL URLWithString:URLString relativeToURL:[GWNetWorking_Share sessionManager].baseURL] absoluteString] parameters:param error:nil];
         
-        NSURLSessionDownloadTask *dataTask = [[GWNetWorking_Share sessionManager] downloadTaskWithRequest:request progress:downloadFileProgress destination:setupFilePath completionHandler:^(NSURLResponse * _Nonnull response, NSURL * _Nullable filePath, NSError * _Nullable error) {
+        NSURLSessionDownloadTask *dataTask = [[GWNetWorking_Share sessionManager] downloadTaskWithRequest:request progress:nil destination:setupFilePath completionHandler:^(NSURLResponse * _Nonnull response, NSURL * _Nullable filePath, NSError * _Nullable error) {
             
             /**
              *  下载完成
@@ -505,7 +527,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
     dispatch_group_async(GWNetQueueGroup_Share->GW_Sync_Group, GWNetQueueGroup_Share->GW_Sync_Queue, ^{
         NSMutableURLRequest *request = [[GWNetWorking_Share sessionManager].requestSerializer requestWithMethod:[GWNetWorking_Share getStringForRequestType:method] URLString:[[NSURL URLWithString:URLString relativeToURL:[GWNetWorking_Share sessionManager].baseURL] absoluteString] parameters:param error:nil];
         
-        NSURLSessionDownloadTask *dataTask = [[GWNetWorking_Share sessionManager] downloadTaskWithRequest:request progress:downloadFileProgress destination:setupFilePath completionHandler:^(NSURLResponse * _Nonnull response, NSURL * _Nullable filePath, NSError * _Nullable error) {
+        NSURLSessionDownloadTask *dataTask = [[GWNetWorking_Share sessionManager] downloadTaskWithRequest:request progress:nil destination:setupFilePath completionHandler:^(NSURLResponse * _Nonnull response, NSURL * _Nullable filePath, NSError * _Nullable error) {
             
             /**
              *  下载完成
@@ -523,39 +545,74 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 
 #pragma mark - commonAction
 - (void)requestDataTask:(NSMutableURLRequest *)request
+               showView:(UIView *)showView
                 success:(void(^)(id result,NSURLResponse *response))success
                 failure:(void(^)(NSError *error))failure
-     uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress{
+     uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
+            blockAction:(ResultErrorBlock)blockAction
+            showLoading:(BOOL)showLoading{
     
-    
-    NSURLSessionDataTask *dataTask = [self.sessionManager dataTaskWithRequest:request uploadProgress:^(NSProgress * _Nonnull uploadProgress) {
-        if (uploadProgress && uploadFileProgress) { //上传进度
-            uploadFileProgress (uploadProgress);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        setNetworkActivityIndicatorVisible(YES)
+    });
+    if (showLoading) {
+        //        展示loadingview
+        if (showView) {
+//            [GW_HUD showHUDLoadingWithText:@"" inView:showView];
+        }else{
+//            [GW_HUD showHUDLoadingWithText:@""];
         }
-    } downloadProgress:^(NSProgress * _Nonnull downloadProgress) {
         
-    } completionHandler:^(NSURLResponse * _Nonnull response, id  _Nullable responseObject, NSError * _Nullable error) {
+    }
+    
+    __weak __typeof(&*self)weakSelf = self;
+    NSURLSessionDataTask *dataTask = [self.sessionManager dataTaskWithRequest:request uploadProgress:uploadFileProgress downloadProgress:nil completionHandler:^(NSURLResponse * _Nonnull response, id  _Nullable responseObject, NSError * _Nullable error) {
         setNetworkActivityIndicatorVisible(NO)
         
-        [self removeTaskFromArr:response];
+        if (showLoading) {
+            //            laodingView消失
+            if (showView) {
+                //                [GW_HUD HideHUDFrom:showView animated:NO];
+            }else{
+                //                [GW_HUD HideHUDAnimated:NO];
+            }
+            
+        }
+        
         
         if (error) {
+            [weakSelf removeTaskFromArr:error.userInfo[@"NSErrorFailingURLStringKey"]];
             if (failure != nil){
                 failure(error);
             }
-            
-        } else {
-            
-            if (success != nil){
-                if ([responseObject isKindOfClass:[NSData class]]) {
-                    id result = [NSJSONSerialization JSONObjectWithData:responseObject options:NSJSONReadingMutableContainers | NSJSONReadingMutableLeaves error:nil];
-                    success(result,response);
+            if (showView) {
+                
+                if (error.code == -1009) {
+                    //                无网络
+                    //                    backGroundV.viewType = DefaultBackgroundViewTypeNoNetWork;
                 }else{
-                    success(responseObject,response);
+                    //                加载错误
+                    //                    backGroundV.viewType = DefaultBackgroundViewTypeNetWorkError;
                 }
+            }
+        } else {
+            [weakSelf removeTaskFromArr:response.URL.absoluteString];
+            if (success != nil){
+                id result = responseObject;
+                if ([responseObject isKindOfClass:[NSData class]]) {
+                    result = [NSJSONSerialization JSONObjectWithData:responseObject options:NSJSONReadingMutableContainers | NSJSONReadingMutableLeaves error:nil];
+                    
+                }
+                
+                if (result && [result isKindOfClass:[NSDictionary class]]) {
+                    
+                    success(result,response);
+                }
+                
             }
         }
     }];
+   
     
     [self.taskArray addObject:dataTask];
     self.currentTask = dataTask;
@@ -593,20 +650,31 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
     return requestTypeString;
 }
 
-- (void)removeTaskFromArr:(NSURLResponse *)response{
-    if (!response) {
+- (void)removeTaskFromArr:(NSString *)urlStr{
+    if (!urlStr) {
         return;
     }
     @synchronized (self) {
         if (self.taskArray.count) {
             for (NSURLSessionTask *task in self.taskArray) {
-                if ([task.response.URL isEqual:response.URL]) {
+                if ([task.currentRequest.URL.absoluteString isEqualToString:urlStr]) {
                     [self.taskArray removeObject:task];
                     break;
                 }
             }
         }
     }
+}
+
+- (NSURLSessionTask *)getCurrentTast:(NSString *)urlStr{
+    @synchronized (self) {
+        for (NSURLSessionTask *task in self.taskArray) {
+            if ([task.currentRequest.URL.absoluteString isEqualToString:urlStr]) {
+                return task;
+            }
+        }
+    }
+    return nil;
 }
 
 - (void)cancelAllTask{
@@ -626,7 +694,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 - (void)cancelNoCurrentAllTask{
     @synchronized (self) {
         for (NSURLSessionTask *task in self.taskArray) {
-            if ([task.response.URL isEqual:_currentTask.response.URL]) {
+            if ([task.currentRequest.URL isEqual:_currentTask.currentRequest.URL]) {
                 continue;
             }
             [task cancel];
@@ -636,6 +704,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 
 ///压缩图片
 + (NSData *)imageCompressToData:(id)obj{
+    
     UIImage *image = nil;
     NSData *data = nil;
     if ([obj isKindOfClass:[UIImage class]]) {
