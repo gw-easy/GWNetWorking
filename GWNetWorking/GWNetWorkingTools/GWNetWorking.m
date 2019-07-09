@@ -166,9 +166,22 @@ static GWNetWorking *baseNet = nil;
     
 }
 
+
+
 + (NSMutableDictionary *)getCommonDict{
     NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
     return dict;
+}
+
+#pragma mark - 刷新requestSerializer请求头-用于token和时间校验
+- (void)refrushRequestSerializer:(NSMutableURLRequest *)request{
+//    举例
+    [self.sessionManager.requestSerializer setValue:@"0" forHTTPHeaderField:@"series"];
+    [self.sessionManager.requestSerializer setValue:@"1" forHTTPHeaderField:@"deviceType"];
+
+    if (request) {
+        request.allHTTPHeaderFields = self.sessionManager.requestSerializer.HTTPRequestHeaders;
+    }
 }
 
 + (void)GWAsyncQueueNotification:(void(^)(void))block{
@@ -564,7 +577,8 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
         }
         
     }
-    
+//    刷新请求头
+    [self refrushRequestSerializer:request];
     __weak __typeof(&*self)weakSelf = self;
     NSURLSessionDataTask *dataTask = [self.sessionManager dataTaskWithRequest:request uploadProgress:uploadFileProgress downloadProgress:nil completionHandler:^(NSURLResponse * _Nonnull response, id  _Nullable responseObject, NSError * _Nullable error) {
         setNetworkActivityIndicatorVisible(NO)
@@ -815,7 +829,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 
 - (instancetype)init{
     if (self = [super init]) {
-        // 创建全局并行
+        // 创建form
         
         self.taskArray = [[NSMutableArray alloc] init];
         
@@ -832,7 +846,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 
 - (instancetype)init{
     if (self = [super init]) {
-        // 创建全局并行
+        // 创建json
         
         self.taskArray = [[NSMutableArray alloc] init];
         
