@@ -574,6 +574,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = E8X5ZQ3QPM;
 				ENABLE_BITCODE = NO;
@@ -585,9 +586,10 @@
 					"$(PROJECT_DIR)/GWNetWorking/GWNetWorkingTools/VoiceConvert/lib",
 				);
 				OTHER_LDFLAGS = "-ObjC";
-				PRODUCT_BUNDLE_IDENTIFIER = gw.GWNetWorking;
+				PRODUCT_BUNDLE_IDENTIFIER = "gw.GWNetWorking--Test";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = "1,2";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -595,6 +597,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = E8X5ZQ3QPM;
 				ENABLE_BITCODE = NO;
@@ -606,9 +609,10 @@
 					"$(PROJECT_DIR)/GWNetWorking/GWNetWorkingTools/VoiceConvert/lib",
 				);
 				OTHER_LDFLAGS = "-ObjC";
-				PRODUCT_BUNDLE_IDENTIFIER = gw.GWNetWorking;
+				PRODUCT_BUNDLE_IDENTIFIER = "gw.GWNetWorking--Test";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = "1,2";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
