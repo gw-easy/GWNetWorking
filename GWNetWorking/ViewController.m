@@ -22,7 +22,14 @@
                                 @"pwd":@"520it",
                                 @"type":@"JSON"
                                 };
-    [GWNetWorking request:@"http://120.25.226.186:32812/login" WithParam:paramDict withMethod:GET_GW success:^(id result, NSURLResponse *response) {
+    
+    [GWJsonNetWorking request:@"http://120.25.226.186:32812/login" WithParam:paramDict withMethod:GET_GW success:^(id result, NSURLResponse *response) {
+        NSLog(@"---%@",result);
+    } failure:^(NSError *error) {
+        NSLog(@"%@",error);
+    }];
+    
+    [GWFormNetWorking request:@"http://120.25.226.186:32812/login" WithParam:paramDict withMethod:GET_GW success:^(id result, NSURLResponse *response) {
         NSLog(@"---%@",result);
     } failure:^(NSError *error) {
         NSLog(@"%@",error);

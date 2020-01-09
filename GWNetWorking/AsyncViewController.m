@@ -24,11 +24,11 @@ static NSString *queID = @"test1";
     [self request3];
     [self request4];
     
-    [GWNetWorking GWAsyncQueueNotificationID:nil block:^{
+    [GWJsonNetWorking GWAsyncQueueNotificationID:nil block:^{
         NSLog(@"------------6");
     }];
     
-    [GWNetWorking GWAsyncQueueNotificationID:@"123456" block:^{
+    [GWJsonNetWorking GWAsyncQueueNotificationID:@"123456" block:^{
         NSLog(@"------------7");
     }];
     
@@ -39,7 +39,7 @@ static NSString *queID = @"test1";
 }
 
 - (void)request1{
-    [GWNetWorking GWAsyncQueueDownloadFileWithURLString:@"http://pic27.nipic.com/20130329/890845_115317964000_2.jpg" WithParam:nil withMethod:GET_GW queueID:nil downloadFileProgress:^(NSProgress *downloadProgress) {
+    [GWJsonNetWorking GWAsyncQueueDownloadFileWithURLString:@"http://pic27.nipic.com/20130329/890845_115317964000_2.jpg" WithParam:nil withMethod:GET_GW queueID:nil downloadFileProgress:^(NSProgress *downloadProgress) {
         
     } setupFilePath:^NSURL *(NSURL *targetPath, NSURLResponse *response) {
         NSString *cachesPath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject];
@@ -51,7 +51,7 @@ static NSString *queID = @"test1";
 }
 
 - (void)request2{
-    [GWNetWorking GWAsyncQueueDownloadFileWithURLString:@"http://pic27.nipic.com/20130329/890845_115317964000_2.jpg" WithParam:nil withMethod:GET_GW queueID:nil downloadFileProgress:^(NSProgress *downloadProgress) {
+    [GWJsonNetWorking GWAsyncQueueDownloadFileWithURLString:@"http://pic27.nipic.com/20130329/890845_115317964000_2.jpg" WithParam:nil withMethod:GET_GW queueID:nil downloadFileProgress:^(NSProgress *downloadProgress) {
         
     } setupFilePath:^NSURL *(NSURL *targetPath, NSURLResponse *response) {
         NSString *cachesPath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject];
@@ -68,7 +68,7 @@ static NSString *queID = @"test1";
                                 @"pwd":@"520it",
                                 @"type":@"JSON"
                                 };
-    [GWNetWorking GWAsyncQueueRequest:@"http://120.25.226.186:32812/login" WithParam:paramDict withMethod:GET_GW queueID:@"123456"  uploadFileProgress:^(NSProgress *uploadProgress) {
+    [GWJsonNetWorking GWAsyncQueueRequest:@"http://120.25.226.186:32812/login" WithParam:paramDict withMethod:GET_GW queueID:@"123456"  uploadFileProgress:^(NSProgress *uploadProgress) {
         
     } success:^(id result, NSURLResponse *response) {
         NSLog(@"------------3");
@@ -96,7 +96,7 @@ static NSString *queID = @"test1";
                                 @"pwd":@"520it",
                                 @"type":@"JSON"
                                 };
-    [GWNetWorking GWAsyncQueueRequest:@"http://120.25.226.186:32812/login" WithParam:paramDict withMethod:GET_GW queueID:@"123456"  uploadFileProgress:^(NSProgress *uploadProgress) {
+    [GWJsonNetWorking GWAsyncQueueRequest:@"http://120.25.226.186:32812/login" WithParam:paramDict withMethod:GET_GW queueID:@"123456"  uploadFileProgress:^(NSProgress *uploadProgress) {
         
     } success:^(id result, NSURLResponse *response) {
         NSLog(@"------------4");

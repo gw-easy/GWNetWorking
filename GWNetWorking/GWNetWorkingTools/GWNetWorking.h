@@ -25,9 +25,7 @@ typedef enum : NSUInteger {
 } HTTPResultError_GW;
 
 typedef void(^ResultErrorBlock)(HTTPResultError_GW result);
-@interface GWNetWorking : NSObject
-//任务数组
-@property (readonly,strong, nonatomic) NSMutableArray *taskArray;
+@interface GWJsonNetWorking : NSObject
 
 + (instancetype)shareGWNetWorking;
 /**
@@ -438,17 +436,10 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 - (void)cancelNoCurrentAllTask;
 
 ///////////////////////////////////////////////////////////
-
-
-
 @end
 
 #pragma mark - 表单请求
-@interface GWFormNetWorking : GWNetWorking
+@interface GWFormNetWorking : GWJsonNetWorking
 
 @end
 
-#pragma mark - json请求
-@interface GWJsonNetWorking : GWNetWorking
-
-@end

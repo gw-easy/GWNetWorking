@@ -35,8 +35,10 @@ typedef enum : NSUInteger {
     NSMutableDictionary *GW_QueueDict;
     NSMutableDictionary *GW_GroupDict;
     NSMutableDictionary *GW_SemaDict;
+    
 }
-
+@property (weak, nonatomic) NSURLSessionTask *currentTask;
+@property (readwrite,strong, nonatomic) NSMutableArray *taskArray;
 @end
 
 @implementation GWNetQueueGroup
@@ -74,29 +76,22 @@ static GWNetQueueGroup *baseGroup = nil;
         GW_Sync_Queue = dispatch_queue_create("GW_Sync_Queue", NULL);
         GW_Sync_Group = dispatch_group_create();
         GW_Sema = dispatch_semaphore_create(0);
+        _taskArray = [[NSMutableArray alloc] init];
     }
     return self;
 }
-
-
 
 @end
 
 
 const void *GW_ins = @"GW_Instance";
-@interface GWNetWorking()
+@interface GWJsonNetWorking()
 @property (strong, nonatomic) AFHTTPSessionManager *sessionManager;
-
-@property (strong, nonatomic) GWNetQueueGroup *queueGroup;
-
-@property (readwrite,strong, nonatomic) NSMutableArray *taskArray;
-
-@property (weak, nonatomic) NSURLSessionTask *currentTask;
 @end
 
-@implementation GWNetWorking
+@implementation GWJsonNetWorking
 
-static GWNetWorking *baseNet = nil;
+static GWJsonNetWorking *baseNet = nil;
 
 +(instancetype)shareGWNetWorking{
     id instance = objc_getAssociatedObject(self, GW_ins);
@@ -106,27 +101,20 @@ static GWNetWorking *baseNet = nil;
     }
     return instance;
 }
-+(instancetype)allocWithZone:(struct _NSZone *)zone
-{
++(instancetype)allocWithZone:(struct _NSZone *)zone{
     return [self shareGWNetWorking];
 }
--(instancetype)copyWithZone:(struct _NSZone *)zone
-{
-    Class selfClass = [self class];
-    return [selfClass shareGWNetWorking] ;
+
+-(instancetype)copyWithZone:(struct _NSZone *)zone{
+    return [[self class] shareGWNetWorking] ;
 }
 
 
 - (instancetype)init{
     if (self = [super init]) {
         // 创建全局并行
-        
-        _taskArray = [[NSMutableArray alloc] init];
-        
         _sessionManager = [AFHTTPSessionManager manager];
-        
         [self setSessionManagerConfigerIsJson:YES];
-        
     }
     return self;
 }
@@ -137,19 +125,17 @@ static GWNetWorking *baseNet = nil;
     if (isJson) {
         //        json形式
         self.sessionManager.requestSerializer = [AFJSONRequestSerializer serializer];
-        self.sessionManager.responseSerializer = [AFJSONResponseSerializer serializer];
         //        [self.sessionManager.requestSerializer setValue:@"application/json;charset=utf-8" forHTTPHeaderField:@"Content-Type"];
         ////        [self.sessionManager.requestSerializer setValue:@"application/json" forHTTPHeaderField:@"Accept"];
         
     }else{
         //        表单形式
         self.sessionManager.requestSerializer = [AFHTTPRequestSerializer serializer];
-        self.sessionManager.responseSerializer = [AFHTTPResponseSerializer serializer];
         //        [self.sessionManager.requestSerializer setValue:UserInfoManagerModel.gradeId forHTTPHeaderField:@"gradeId"];
         //        [self.sessionManager.requestSerializer setValue:UserInfoManagerModel.token forHTTPHeaderField:@"token"];
     }
     
-   
+    self.sessionManager.responseSerializer = [AFJSONResponseSerializer serializer];
     //        响应服务器的文件格式
     self.sessionManager.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json", @"text/json",@"text/html", @"text/plain",@"text/javascript",@"charset/UTF-8",nil];
     //是否需要cookies缓存
@@ -538,7 +524,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
                      uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
                                 success:(void(^)(id result,NSURLResponse *response))success
                                 failure:(void(^)(NSError *error))failure{
-    __weak GWNetWorking *netW = GWNetWorking_Share;
+    __weak GWJsonNetWorking *netW = GWNetWorking_Share;
 //    进行视频转换，由高->中，如果录制时就是中质量，请将转换方法屏蔽；
     [self compressVideo:videoPath finish:^(NSString *path) {
         NSMutableURLRequest *request = [netW.sessionManager.requestSerializer multipartFormRequestWithMethod:[netW getStringForRequestType:method] URLString:URLString parameters:param constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
@@ -559,7 +545,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
                downloadCompletionHandler:(void (^)(NSURL *filePath, NSError *error))downloadCompletionHandler{
     
     NSMutableURLRequest *request = [[GWNetWorking_Share sessionManager].requestSerializer requestWithMethod:[GWNetWorking_Share getStringForRequestType:method] URLString:[[NSURL URLWithString:URLString relativeToURL:[GWNetWorking_Share sessionManager].baseURL] absoluteString] parameters:param error:nil];
-    __weak GWNetWorking *netW = GWNetWorking_Share;
+    __weak GWJsonNetWorking *netW = GWNetWorking_Share;
     NSURLSessionDownloadTask *dataTask = [[GWNetWorking_Share sessionManager] downloadTaskWithRequest:request progress:nil destination:^NSURL * _Nonnull(NSURL * _Nonnull targetPath, NSURLResponse * _Nonnull response) {
         
         /**
@@ -719,8 +705,8 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
     }];
    
     
-    [self.taskArray addObject:dataTask];
-    self.currentTask = dataTask;
+    [GWNetQueueGroup_Share.taskArray addObject:dataTask];
+    GWNetQueueGroup_Share.currentTask = dataTask;
     [dataTask resume];
     
 }
@@ -760,10 +746,10 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
         return;
     }
     @synchronized (self) {
-        if (self.taskArray.count) {
-            for (NSURLSessionTask *task in self.taskArray) {
+        if (GWNetQueueGroup_Share.taskArray.count) {
+            for (NSURLSessionTask *task in GWNetQueueGroup_Share.taskArray) {
                 if ([task.currentRequest.URL.absoluteString isEqualToString:urlStr]) {
-                    [self.taskArray removeObject:task];
+                    [GWNetQueueGroup_Share.taskArray removeObject:task];
                     break;
                 }
             }
@@ -773,7 +759,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 
 - (NSURLSessionTask *)getCurrentTast:(NSString *)urlStr{
     @synchronized (self) {
-        for (NSURLSessionTask *task in self.taskArray) {
+        for (NSURLSessionTask *task in GWNetQueueGroup_Share.taskArray) {
             if ([task.currentRequest.URL.absoluteString isEqualToString:urlStr]) {
                 return task;
             }
@@ -784,22 +770,22 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 
 - (void)cancelAllTask{
     @synchronized (self) {
-        for (NSURLSessionTask *task in self.taskArray) {
+        for (NSURLSessionTask *task in GWNetQueueGroup_Share.taskArray) {
             [task cancel];
         }
     }
 }
 
 - (void)cancelCurrentTask{
-    if (self.currentTask) {
-        [self.currentTask cancel];
+    if (GWNetQueueGroup_Share.currentTask) {
+        [GWNetQueueGroup_Share.currentTask cancel];
     }
 }
 
 - (void)cancelNoCurrentAllTask{
     @synchronized (self) {
-        for (NSURLSessionTask *task in self.taskArray) {
-            if ([task.currentRequest.URL isEqual:_currentTask.currentRequest.URL]) {
+        for (NSURLSessionTask *task in GWNetQueueGroup_Share.taskArray) {
+            if ([task.currentRequest.URL isEqual:GWNetQueueGroup_Share.currentTask.currentRequest.URL]) {
                 continue;
             }
             [task cancel];
@@ -921,11 +907,6 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 - (instancetype)init{
     if (self = [super init]) {
         // 创建form
-        
-        self.taskArray = [[NSMutableArray alloc] init];
-        
-        self.sessionManager = [AFHTTPSessionManager manager];
-        
         [self setSessionManagerConfigerIsJson:NO];
     }
     return self;
@@ -933,19 +914,3 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
 
 @end
 
-@implementation GWJsonNetWorking
-
-- (instancetype)init{
-    if (self = [super init]) {
-        // 创建json
-        
-        self.taskArray = [[NSMutableArray alloc] init];
-        
-        self.sessionManager = [AFHTTPSessionManager manager];
-        
-        [self setSessionManagerConfigerIsJson:YES];
-    }
-    return self;
-}
-
-@end
