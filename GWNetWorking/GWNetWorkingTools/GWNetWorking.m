@@ -773,6 +773,7 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
         for (NSURLSessionTask *task in GWNetQueueGroup_Share.taskArray) {
             [task cancel];
         }
+        [GWNetQueueGroup_Share.taskArray removeAllObjects];
     }
 }
 
@@ -780,15 +781,22 @@ uploadFileProgress:(void(^)(NSProgress *uploadProgress))uploadFileProgress
     if (GWNetQueueGroup_Share.currentTask) {
         [GWNetQueueGroup_Share.currentTask cancel];
     }
+    [GWNetQueueGroup_Share.taskArray removeObject:GWNetQueueGroup_Share.currentTask];
 }
 
 - (void)cancelNoCurrentAllTask{
     @synchronized (self) {
+        NSURLSessionTask *curTask = nil;
         for (NSURLSessionTask *task in GWNetQueueGroup_Share.taskArray) {
             if ([task.currentRequest.URL isEqual:GWNetQueueGroup_Share.currentTask.currentRequest.URL]) {
+                curTask = task;
                 continue;
             }
             [task cancel];
+        }
+        [GWNetQueueGroup_Share.taskArray removeAllObjects];
+        if (curTask) {
+            [GWNetQueueGroup_Share.taskArray addObject:curTask];
         }
     }
 }
